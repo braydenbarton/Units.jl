@@ -1,0 +1,13 @@
+name = "Units"
+uuid = "7e4a0df4-8c06-47aa-b1e5-64d0c64e8acc"
+authors = ["Brayden Barton <brayden.barton@usu.edu> and contributors"]
+version = "0.1.0"
+
+[compat]
+julia = "1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
