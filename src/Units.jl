@@ -25,9 +25,13 @@ un[:mass][:lbm]     = 0.4535924
 un[:mass][:slug]    = 32.17405*un[:mass][:lbm]
 
 # Converts all units to a given set of base units and returns them to the user
-function init_units(;length::T=:m, time::T=:s, mass::T=:kg) where {T<:Symbol}
+function init_units(; length::Union{String, Symbol}=:m, time::Union{String, Symbol}=:s, mass::Union{String, Symbol}=:kg)
     units = Pair{Symbol, Float64}[]
-    baseunits = Dict([:length=>length, :time=>time, :mass=>mass])
+    baseunits = Dict([
+        :length=>Symbol(length), 
+        :time=>Symbol(time), 
+        :mass=>Symbol(mass)
+        ])
     for unittype ∈ eachindex(un)
         for key ∈ eachindex(un[unittype])
             append!(units, [key=>un[unittype][key]/un[unittype][baseunits[unittype]]])
