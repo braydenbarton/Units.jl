@@ -1,28 +1,39 @@
 module Units
-export units
+export init_units
 # This package contains some units for convenient global conversion
+# Initializing dictionary containing units
+const un = Dict{Symbol, Dict{Symbol, Float64}}()
+
 # Length
-m       = 1.
-km      = 1e3
+un[:length] = Dict{Symbol, Float64}()
+un[:length][:m]     = 1.
+un[:length][:km]    = 1e3
 
 # Time
-s       = 1.
-min     = 60.
-hr      = 360.
-day     = 86400.
-year    = 365.25*day
+un[:time] = Dict{Symbol, Float64}()
+un[:time][:s]       = 1.
+un[:time][:min]     = 60.
+un[:time][:hr]      = 360.
+un[:time][:day]     = 86400.
+un[:time][:year]    = 365.25*un[:time][:day]
 
 # Mass
-kg      = 1.
-g       = 1e-3
-lbm     = 0.4535924
-slug    = 32.17405*lbm
+un[:mass] = Dict{Symbol, Float64}()
+un[:mass][:kg]      = 1.
+un[:mass][:g]       = 1e-3
+un[:mass][:lbm]     = 0.4535924
+un[:mass][:slug]    = 32.17405*un[:mass][:lbm]
 
-# Collecting and exporting data
-unitnames = (
-    :m, :km,
-    :s, :min, :hr, :day, :year,
-    :kg, :g, :lbm, :slug
-)
-units = NamedTuple{unitnames}(eval.(unitnames))
+# Converts all units to a given set of base units and returns them to the user
+function init_units(;length::T=:m, time::T=:s, mass::T=:kg) where {T<:Symbol}
+    units = Pair{Symbol, Float64}[]
+    baseunits = Dict([:length=>length, :time=>time, :mass=>mass])
+    for unittype ∈ eachindex(un)
+        for key ∈ eachindex(un[unittype])
+            append!(units, [key=>un[unittype][key]/un[unittype][baseunits[unittype]]])
+        end
+    end
+    NamedTuple(units)
+end
+
 end
