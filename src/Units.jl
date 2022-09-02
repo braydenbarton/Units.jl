@@ -8,6 +8,13 @@ const un = Dict{Symbol, Dict{Symbol, Float64}}()
 un[:length] = Dict{Symbol, Float64}()
 un[:length][:m]     = 1.
 un[:length][:km]    = 1e3
+un[:length][:cm]    = 1e-2
+un[:length][:mm]    = 1e-3
+un[:length][:in]    = 2.54*un[:length][:cm]
+un[:length][:ft]    = 12.0*un[:length][:in]
+un[:length][:yd]    = 3.0*un[:length][:ft]
+un[:length][:mi]    = 5280.0*un[:length][:ft]
+un[:length][:nmi]   = 1852.0
 
 # Time
 un[:time] = Dict{Symbol, Float64}()
