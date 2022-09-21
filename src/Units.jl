@@ -1,7 +1,7 @@
 module Units
 export init_units
 # This package contains some units for convenient global conversion
-# Initializing dictionary containing units
+# Initializing dictionary containing single-dimension units
 const un = Dict{Symbol, Dict{Symbol, Float64}}()
 
 # Length
@@ -31,6 +31,12 @@ un[:mass][:g]       = 1e-3
 un[:mass][:lbm]     = 0.4535924
 un[:mass][:slug]    = 32.17405*un[:mass][:lbm]
 
+# Force
+force = Dict{Symbol, Float64}()
+force[:N]           = 1.
+force[:kN]          = 1e3
+force[:lbf]         = un[:mass][:slug] * un[:length][:ft]
+
 # Converts all units to a given set of base units and returns them to the user
 function init_units(; length::Union{String, Symbol}=:m, time::Union{String, Symbol}=:s, mass::Union{String, Symbol}=:kg)
     units = Pair{Symbol, Float64}[]
@@ -44,6 +50,12 @@ function init_units(; length::Union{String, Symbol}=:m, time::Union{String, Symb
             append!(units, [key=>un[unittype][key]/un[unittype][baseunits[unittype]]])
         end
     end
+    # Convert force units to be compatible with base units
+    base_force = un[:mass][Symbol(mass)] * un[:length][Symbol(length)] / un[:time][Symbol(time)]^2
+    for key ∈ eachindex(force)
+        append!(units, [key=>force[key] / base_force])
+    end
+
     NamedTuple(units)
 end
 
