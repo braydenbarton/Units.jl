@@ -9,24 +9,39 @@ export init_units, Unit, UnitNumber
 - `value::Real`: The value of the unit relative to base SI units, i.e. 1 for a meter
 - `priority::Int64`: The hierarchy placement of this unit for conversions. When numbers with different units are added,
     the unit with a higher value is used.
-- `length::Int64`: The length dimension of the unit, i.e. 2 for kg-m^2/s^2
-- `mass::Int64`: The mass dimension of the unit, i.e. 1 for kg-m^2/s^2
-- `time::Int64`: The time dimension of the unit, i.e. -2 for kg-m^2/s^2
+- `length::Real`: The length dimension of the unit, i.e. 2 for kg-m^2/s^2
+- `mass::Real`: The mass dimension of the unit, i.e. 1 for kg-m^2/s^2
+- `time::Real`: The time dimension of the unit, i.e. -2 for kg-m^2/s^2
 """
 struct Unit
     name::Symbol
     value::Real
     priority::Int64
-    length::Int64
-    mass::Int64
-    time::Int64
+    length::Real
+    mass::Real
+    time::Real
 end
 # Returns the dimensions of the unit as a vector
 function unit_dims(unit::Unit)
     [unit.length, unit.mass, unit.time]
 end
 
-struct UnitNumber{T} <: T where T<:Number
+# Determines the unit created by multiplying two units together
+function Base.:*(unit1::Unit, unit2::Unit)
+    return Unit(:none, unit1.value*unit2.value, typemin(Int64), (unit_dims(unit1)+unit_dims(unit2))...)
+end
+
+# Determines the unit created by dividing two units
+function Base.:/(unit1::Unit, unit2::Unit)
+    return Unit(:none, unit1.value/unit2.value, typemin(Int64), (unit_dims(unit1)-unit_dims(unit2))...)
+end
+
+# Determines the unit created by exponentiation
+function Base.:^(unit::Unit, power::Real)
+    return Unit(:none, unit.value^power, typemin(Int64), (unit_dims(unit)*power)...)
+end
+
+struct UnitNumber{T} <: T where {T<:Number}
     value::T
     unit::Unit
 end
@@ -38,6 +53,7 @@ function Base.:+(num1::UnitNumber, num2::UnitNumber)
         if num1.unit.priority < num2.unit.priority  # Determine which number has a higher unit priority
             num1, num2 = num2, num1
         end
+        # Convert second number to units of first number, add, and create new UnitNumber
         return UnitNumber(num1.value + num2.value * num2.unit.value / num1.unit.value, num1.unit)
     else
         throw(ArgumentError("Values have mismatched unit dimensions with $unit_dims(num1.unit) and 
@@ -45,9 +61,17 @@ function Base.:+(num1::UnitNumber, num2::UnitNumber)
     end
 end
 
-function Base.:-(num1::UnitNumber, num2::UnitNumber)
-    return num1 + UnitNumber(-num2.value, num2.unit)
-end
+Base.:-(num1::UnitNumber, num2::UnitNumber) = num1 + UnitNumber(-num2.value, num2.unit)
+Base.:-(num::UnitNumber) = UnitNumber(-num.value, num.unit)
+Base.:*(num1::UnitNumber, num2::UnitNumber) = UnitNumber(num1.value*num2.value, num1.unit*num2.unit)
+Base.:/(num1::UnitNumber, num2::UnitNumber) = UnitNumber(num1.value/num2.value, num1.unit/num2.unit)
+Base.:^(num::UnitNumber, power::Real) = UnitNumber(num.value^power, num.unit^power)
+Base.:^(num::UnitNumber, power::Integer) = UnitNumber(num.value^power, num.unit^power)
+Base.sqrt(num::UnitNumber) = num^(1/2)
+Base.cbrt(num::UnitNumber) = num^(1/3)
+
+Base.promote_rule(::Type{UnitNumber{T}}, ::Type{Float64}) where T<:Number = 
+(x) -> UnitNumber(x, Unit(:none, 1, typemin(Int64), 0, 0, 0,))
 
 const un = Dict{Symbol, Dict{Symbol, Float64}}()
 
