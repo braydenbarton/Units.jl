@@ -1,7 +1,63 @@
 module Units
-export init_units
+export init_units, Unit, UnitNumber
 # This package contains some units for convenient global conversion
 # Initializing dictionary containing single-dimension units
+
+"""
+# Parameters
+- `name::Symbol`: The typical representation of the unit, i.e. :km or :in
+- `value::Real`: The value of the unit relative to base SI units, i.e. 1 for a meter
+- `priority::Int64`: The hierarchy placement of this unit for conversions. When numbers with different units are added,
+    the unit with a higher value is used.
+- `length::Int64`: The length dimension of the unit, i.e. 2 for kg-m^2/s^2
+- `mass::Int64`: The mass dimension of the unit, i.e. 1 for kg-m^2/s^2
+- `time::Int64`: The time dimension of the unit, i.e. -2 for kg-m^2/s^2
+"""
+struct Unit
+    name::Symbol
+    value::Real
+    priority::Int64
+    length::Int64
+    mass::Int64
+    time::Int64
+end
+# Returns the dimensions of the unit as a vector
+function unit_dims(unit::Unit)
+    [unit.length, unit.mass, unit.time]
+end
+
+# function Base.:+(unit1::Unit, unit2::Unit)
+#     if unit1 == unit2 || unit_dims(unit1) == unit_dims(unit2)
+#         return unit1
+#     else
+#         throw(DomainError(unit_dims(unit1) .== unit_dims(unit2), "Dimensions of units being added do not match"))
+#     end
+# end
+
+# function Base.:*(unit1::Unit, unit2::Unit)
+#     new
+# end
+
+struct UnitNumber{T} <: T where T<:Number
+    value::T
+    unit::Unit
+end
+
+function Base.:+(num1::UnitNumber, num2::UnitNumber)
+    if num1.unit == num2.unit
+        return UnitNumber(num1.value + num2.value, num1.unit)
+    elseif unit_dims(num1.unit) == unit_dims(num2.unit)
+        if num1.unit.priority < num2.unit.priority  # Determine which number has a higher unit priority
+            num1, num2 = num2, num1
+        end
+        return UnitNumber(num1.value + num2.value * num2.unit.value / num1.unit.value, num1.unit)
+    else
+        throw(ArgumentError("Values have mismatched unit dimensions with $unit_dims(num1.unit) and 
+        $unit_dims(num1.unit)"))
+    end
+
+end
+
 const un = Dict{Symbol, Dict{Symbol, Float64}}()
 
 # Length
