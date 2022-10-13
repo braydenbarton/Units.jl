@@ -26,18 +26,6 @@ function unit_dims(unit::Unit)
     [unit.length, unit.mass, unit.time]
 end
 
-# function Base.:+(unit1::Unit, unit2::Unit)
-#     if unit1 == unit2 || unit_dims(unit1) == unit_dims(unit2)
-#         return unit1
-#     else
-#         throw(DomainError(unit_dims(unit1) .== unit_dims(unit2), "Dimensions of units being added do not match"))
-#     end
-# end
-
-# function Base.:*(unit1::Unit, unit2::Unit)
-#     new
-# end
-
 struct UnitNumber{T} <: T where T<:Number
     value::T
     unit::Unit
@@ -55,7 +43,10 @@ function Base.:+(num1::UnitNumber, num2::UnitNumber)
         throw(ArgumentError("Values have mismatched unit dimensions with $unit_dims(num1.unit) and 
         $unit_dims(num1.unit)"))
     end
+end
 
+function Base.:-(num1::UnitNumber, num2::UnitNumber)
+    return num1 + UnitNumber(-num2.value, num2.unit)
 end
 
 const un = Dict{Symbol, Dict{Symbol, Float64}}()
