@@ -1,5 +1,5 @@
 module Units
-export init_units, Unit, UnitNumber
+export init_units, Unit, UnitNumber, value
 # This package contains some units for convenient global conversion
 # Initializing dictionary containing single-dimension units
 
@@ -70,8 +70,8 @@ function Base.:+(num1::UnitNumber, num2::UnitNumber)
         # Convert second number to units of first number, add, and create new UnitNumber
         return UnitNumber(num1.value + num2.value * num2.unit.value / num1.unit.value, num1.unit)
     else
-        throw(ArgumentError("Values have mismatched unit dimensions with $unit_dims(num1.unit) and 
-        $unit_dims(num1.unit)"))
+        throw(ArgumentError("Values have mismatched unit dimensions with $(unit_dims(num1.unit)) and 
+        $(unit_dims(num2.unit))"))
     end
 end
 
@@ -89,6 +89,9 @@ Base.cbrt(num::UnitNumber) = num^(1/3)
 
 Base.promote(x::UnitNumber, y::Number) = (x, UnitNumber(y, FalseUnit()))
 Base.promote(x::Number, y::UnitNumber) = reverse(promote(y, x))
+
+# Extracts the value of a UnitNumber in SI base units
+value(num::UnitNumber) = num.value * num.unit.value
 
 const un = Dict{Symbol, Dict{Symbol, Float64}}()
 
