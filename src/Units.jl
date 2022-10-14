@@ -3,6 +3,12 @@ export init_units, Unit, UnitNumber
 # This package contains some units for convenient global conversion
 # Initializing dictionary containing single-dimension units
 
+abstract type AbstractUnit end
+
+# Type to make use of multiple dispatch for type promotion
+struct FalseUnit <: AbstractUnit
+end
+
 """
 # Parameters
 - `name::Symbol`: The typical representation of the unit, i.e. :km or :in
@@ -13,7 +19,7 @@ export init_units, Unit, UnitNumber
 - `mass::Real`: The mass dimension of the unit, i.e. 1 for kg-m^2/s^2
 - `time::Real`: The time dimension of the unit, i.e. -2 for kg-m^2/s^2
 """
-struct Unit
+struct Unit <: AbstractUnit
     name::Symbol
     value::Real
     priority::Int64
@@ -30,24 +36,32 @@ end
 function Base.:*(unit1::Unit, unit2::Unit)
     return Unit(:none, unit1.value*unit2.value, typemin(Int64), (unit_dims(unit1)+unit_dims(unit2))...)
 end
+Base.:*(unit::Unit, ::FalseUnit) = unit
+Base.:*(::FalseUnit, unit::Unit) = unit
 
 # Determines the unit created by dividing two units
 function Base.:/(unit1::Unit, unit2::Unit)
     return Unit(:none, unit1.value/unit2.value, typemin(Int64), (unit_dims(unit1)-unit_dims(unit2))...)
 end
+Base.:/(unit::Unit, ::FalseUnit) = unit
+Base.:/(::FalseUnit, unit::Unit) = Unit(:none, 1/unit.value, typemin(Int64), (-unit_dims(unit))...)
 
 # Determines the unit created by exponentiation
 function Base.:^(unit::Unit, power::Real)
     return Unit(:none, unit.value^power, typemin(Int64), (unit_dims(unit)*power)...)
 end
 
-struct UnitNumber{T} <: T where {T<:Number}
+struct UnitNumber{T, U} <: T where {T<:Number, U<:AbstractUnit}
     value::T
-    unit::Unit
+    unit::U
 end
 
 function Base.:+(num1::UnitNumber, num2::UnitNumber)
     if num1.unit == num2.unit
+        return UnitNumber(num1.value + num2.value, num1.unit)
+    elseif typeof(num1.unit) == FalseUnit
+        return UnitNumber(num1.value + num2.value, num2.unit)
+    elseif typeof(num2.unit) == FalseUnit
         return UnitNumber(num1.value + num2.value, num1.unit)
     elseif unit_dims(num1.unit) == unit_dims(num2.unit)
         if num1.unit.priority < num2.unit.priority  # Determine which number has a higher unit priority
@@ -63,15 +77,18 @@ end
 
 Base.:-(num1::UnitNumber, num2::UnitNumber) = num1 + UnitNumber(-num2.value, num2.unit)
 Base.:-(num::UnitNumber) = UnitNumber(-num.value, num.unit)
+
 Base.:*(num1::UnitNumber, num2::UnitNumber) = UnitNumber(num1.value*num2.value, num1.unit*num2.unit)
+
 Base.:/(num1::UnitNumber, num2::UnitNumber) = UnitNumber(num1.value/num2.value, num1.unit/num2.unit)
+
 Base.:^(num::UnitNumber, power::Real) = UnitNumber(num.value^power, num.unit^power)
 Base.:^(num::UnitNumber, power::Integer) = UnitNumber(num.value^power, num.unit^power)
 Base.sqrt(num::UnitNumber) = num^(1/2)
 Base.cbrt(num::UnitNumber) = num^(1/3)
 
-Base.promote_rule(::Type{UnitNumber{T}}, ::Type{Float64}) where T<:Number = 
-(x) -> UnitNumber(x, Unit(:none, 1, typemin(Int64), 0, 0, 0,))
+Base.promote(x::UnitNumber, y::Number) = (x, UnitNumber(y, FalseUnit()))
+Base.promote(x::Number, y::UnitNumber) = reverse(promote(y, x))
 
 const un = Dict{Symbol, Dict{Symbol, Float64}}()
 
