@@ -20,7 +20,7 @@ un[:length][:nmi]   = 1852.0
 un[:time] = Dict{Symbol, Float64}()
 un[:time][:s]       = 1.
 un[:time][:min]     = 60.
-un[:time][:hr]      = 360.
+un[:time][:hr]      = 3600.
 un[:time][:day]     = 86400.
 un[:time][:year]    = 365.25*un[:time][:day]
 
