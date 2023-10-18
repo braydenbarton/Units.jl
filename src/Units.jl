@@ -1,5 +1,5 @@
 module Units
-export init_units
+export init_units, get_units
 # This package contains some units for convenient global conversion
 # Initializing dictionary containing single-dimension units
 const un = Dict{Symbol, Dict{Symbol, Float64}}()
@@ -57,6 +57,15 @@ function init_units(; length::Union{String, Symbol}=:m, time::Union{String, Symb
     end
 
     NamedTuple(units)
+end
+
+# Loads units from Main if available. Otherwise, loads the base version of init_units
+function get_units()
+    if isdefined(Main, :un)
+        return Main.un
+    else
+        return init_units()
+    end
 end
 
 end
