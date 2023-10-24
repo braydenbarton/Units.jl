@@ -59,11 +59,12 @@ function init_units(; length::Union{String, Symbol}=:m, time::Union{String, Symb
     NamedTuple(units)
 end
 
-# Loads units from Main if available. Otherwise, loads the base version of init_units
-function get_units()
-    if isdefined(Main, :un)
-        return Main.un
+# Loads units from MODULE if available. Otherwise, loads the base version of init_units
+function get_units(MODULE::Module=Main; name::Symbol=:un)
+    if isdefined(MODULE, name)
+        return getfield(MODULE, name)
     else
+        @warn "Symbol :$name is not defined in Module $MODULE. Returning default values."
         return init_units()
     end
 end
